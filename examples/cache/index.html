@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>PWA simple cache</title>
+  </head>
+  <body>
+    <h1>Image loading...</h1>
+    <script src="./register.sw.js"></script>
+    <script>
+      window.addEventListener('load', () => {
+        const img = new Image();
+        img.src = "https://picsum.photos/800/600?image=222";
+        document.body.appendChild(img);
+      });
+    </script>
+  </body>
+</html>

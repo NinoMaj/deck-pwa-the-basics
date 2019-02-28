@@ -1,0 +1,553 @@
+import { Head, Notes, Appear } from "mdx-deck";
+import { CodeSurfer } from "mdx-deck-code-surfer";
+import { Split } from "mdx-deck/layouts";
+import vsDark from "prism-react-renderer/themes/vsDark";
+
+import { RedText, PageContainer } from "./components";
+
+export { default as theme } from "./theme";
+import appShell from "./images/app-shell.jpg";
+import workBoxApiExample from './images/workbox-api-example.jpg';
+import workBoxApiExample2 from './images/workbox-api-example2.jpg';
+import pwaBuilder from './images/pwa-builder.jpg';
+import swLifecycle from './images/sw-lifecycle.jpg';
+import swNetworkFirst from "./images/sw-network-first.jpg";
+import swCacheFirst from "./images/sw-cache-first.jpg";
+import swStaleWhileRevalidate from "./images/sw-stale-while-revalidate.jpg";
+
+# <RedText>PWA</RedText> the basics
+<Head>
+  <title>PWA the basics</title>
+</Head>
+
+---
+## Native like web apps on 🔥
+- <RedText>F</RedText>ast load and scroll, animate smoothly
+- <RedText>I</RedText>ntegrated, on home screen
+- <RedText>R</RedText>eliable, even when no connection
+- <RedText>E</RedText>ngaging, push notification
+
+---
+## Features
+<ul>
+  <Appear>
+    <li>Caching/Offline mode 📴</li>
+    <li>Add to home screen 🏠</li>
+    <li>Background sync 🔌</li>
+    <li>Push notification 🔔</li>
+    <li>Visibility in task switcher 👀</li>
+    <li>App presence in store 🏪</li>
+    <li>Even more in the future, periodic sync, geofencing, backgroundFetch... <a href="https://whatwebcando.today/" alt="What web can do today website.">What web can do today?</a></li>
+  </Appear>
+</ul>
+
+<Notes>
+  <p>Smaller in size than native apps (customers use less data) / increase in engagement</p>
+  <p>Add to home screen prompt each browser handles differently</p>
+</Notes>
+
+---
+## There are 3 prerequisites for PWA
+<ol>
+  <Appear>
+    <li>Service worker 🛠</li>
+    <ul>
+      <li><a href="https://jakearchibald.github.io/isserviceworkerready/" alt="Service worker browser support.">Browser support is great</a></li>
+      <li>SW heavily use Cache Storage API, Fetch API and Promises</li>
+    </ul>
+    <li>Web app manifest 📃</li>
+    <li>HTTPS 🔒</li>
+  </Appear>
+</ol>
+
+<Notes>
+  <p>Cache Storage API used for the network resources necessary to load your app while offline. 
+    for all other data, use IndexedDB (with a promises wrapper)</p>
+  <p>HTTPS is not needed for local request, to make testing easier</p>
+</Notes>
+
+---
+### A <RedText>service worker (SW)</RedText> is a script that your browser runs in the background, separate from a web page
+<ul>
+  <Appear>
+    <li>SW is aslo <RedText>specification</RedText></li>
+    <li>Ability to intercept and handle network requests, <RedText>network proxy</RedText></li>
+    <li>Allows <RedText>new features that don't need a web page or user interaction</RedText>, like push notifications and background sync</li>
+    <li>A service worker is <RedText>built into the browser</RedText> and controlled by a bit of extra JavaScript code that you are responsible for creating</li>
+    <li>SW === <RedText>Web Worker</RedText>, non blocking, no DOM access</li>
+    <li>Before service worker, there was one other API that gave users an offline experience on the web called <RedText>AppCache</RedText></li>
+  </Appear>
+</ul>
+
+<Notes>
+  <p>Web is build with premise that internet connection is always available, but that is not always the case</p>
+  <p>
+    A service worker is built into the browser and controlled by a bit of extra JavaScript code that you are responsible for creating.
+    You deploy this alongside the other files that make up your actual web application.
+  </p>
+  <p>
+    A service worker has some special powers—among other duties, it patiently waits for your web app to make an outgoing request,
+    and then springs into action by intercepting it. What the service worker does with this intercepted request is up to you!
+    For some requests, the best course of action might be just to allow the request to continue on to the network,
+    just like what would happen if there were no service worker at all.
+    For other requests, though, you can take advantage of something more flexible than the browser's HTTP cache,
+    and return a reliably fast response without having to worry about the network. That entails using the other piece of the puzzle: the Cache Storage API.
+  </p>
+  <p>Things to note about a service worker:</p>
+  <ul>
+    <li>
+      It's a Web Worker, so it can't access the DOM directly. Instead, a service worker can communicate with the pages it controls
+      by responding to messages sent via the postMessage interface, and those pages can manipulate the DOM if needed.
+    </li>
+    <li>Since it's Web Worker it is non blocking</li>
+    <li>
+      It's terminated when not in use, and restarted when it's next needed, so you cannot rely on global state within a
+      service worker's onfetch and onmessage handlers. If there is information that you need to persist and reuse across restarts,
+      service workers do have access to the IndexedDB API.
+    </li>
+    <li>Service workers are async, make extensive use of promises</li>
+    <li>WebP example</li>
+  </ul>
+</Notes>
+
+---
+<CodeSurfer
+  code={require("raw-loader!./snippets/manifest.json.snippet")}
+  title="Web app manifest"
+  theme={vsDark}
+/>
+
+<Notes>
+  <ul>
+    <li>If you don't include a scope in your manifest, then the default implied scope is the directory that your web app manifest is served from.</li>
+    <li>The scope attribute can be a relative path (../), or any higher level path (/) which would allow for an increase in coverage of navigations in your web app.</li>
+    <li>The start_url must be in the scope.</li>
+    <li>The start_url is relative to the path defined in the scope attribute.</li>
+    <li>A start_url starting with / will always be the root of the origin.</li>
+    <li>When your app first launches, it can take a moment for the browser to spin up, and the initial content to begin rendering. Instead of showing a white screen that may look to the user like the app is stall, Chrome will show a splash screen, until the first paint.</li>
+    <li>Splash screen, browser will automatically create the splash screen from the manifest properties, including, name, background_color and icons. The background_color should be the same color as the load page, to provide a smooth transition from the splash screen to your app.</li>
+  </ul>
+</Notes>
+
+---
+## Cache API gives us complete control over cache
+<ul>
+  <Appear>
+    <li><RedText>Complete control over cache</RedText>, instead of relying on a combination of HTTP headers and the browser's built-in heuristics</li>
+    <li>It's still <RedText>recommended that you configure the Cache-Control headers</RedText> on your web server</li>
+    <li> What can we do that was difficult or impossible with just HTTP cache:
+      <ul>
+        <li>Use a "refresh in the background" approach to cached content, known as <RedText>stale-while-revalidate.</RedText></li>
+        <li>Impose a cap on the maximum number of assets to cache, and implement a <RedText>custom expiration policy</RedText> to remove items once that limit is reached.</li>
+      </ul>
+    </li>
+    <li><RedText>Request/response objects</RedText> are used as the unique keys/return value of cache</li>
+    <li>There are <RedText>no automatic, built-in expiration</RedText> or freshness checks</li>
+  </Appear>
+</ul>
+
+<Notes>
+  <p>The Cache-Control header on a given Response is effectively ignored when caching data.</p>
+  <p>
+    It's still recommended that you configure the Cache-Control headers on your web server,
+    even when you know that you're using the Cache Storage API. You can usually get away with
+    setting Cache-Control: no-cache for unversioned URLs, and/or Cache-Control: max-age=31536000 for URLs that contain versioning information, like hashes.
+  </p>
+  <p>
+    Request objects are used as the unique keys when reading and writing to these caches.
+    As a convenience, you can pass in a URL string like 'https://example.com/index.html' as the key instead of an actual Request object
+  </p>
+  <p>Response objects are used as the values in these caches.</p>
+  <p>
+    There are no automatic, built-in expiration or freshness checks, and once you store an item in the cache,
+    it will persist until your code explicitly removes it (there are libraries to simplify cache maintenance)
+  </p>
+</Notes>
+
+---
+## App shell
+<PageContainer>
+  <img src={appShell} alt="App shell."/>
+</PageContainer>
+
+<Notes>
+  Separte changing part of app (content/data) from static part (shell).
+</Notes>
+
+---
+## Service worker <RedText>lifecycle</RedText>
+### The lifecycle of a Service Worker is completely separate from your web page
+<ul>
+  <li>How to registering SW</li>
+  <li>The lifecycle of a Service Worker</li>
+  <li>How Service Workers are registered</li>
+  <li>How to update a Service Worker</li>
+  <li>When Service Workers are destroyed</li>
+</ul>
+
+---
+<CodeSurfer
+  code={require("raw-loader!./snippets/register.sw.snippet")}
+  title="Register SW to tell browser where our sw js lives"
+  theme={vsDark}
+/>
+
+<Notes>
+  <ul>
+    <li>You can call register() every time a page loads without concern; the browser will figure out if the service worker is already registered or not and handle it accordingly.</li>
+    <li>New code, new service worker</li>
+    <li>New service worker is waiting to become active</li>
+    <li>
+      Scope - what range of URLs a service worker can control. This is usually a relative URL.
+      It is relative to the base URL of the application.
+      By default, the scope value for a service worker registration is set to the directory where the service worker
+      script is located.
+    </li>
+    <li>/about/service-worker.js/ would only use sw on about domain</li>
+  </ul>
+</Notes>
+
+---
+### Lifecycle starts with - install
+<ul>
+  <li><RedText>Install</RedText>
+  <ul>
+    <li>The install event is the first event a service worker gets, and it only happens once.</li>
+    <li>During the install step event you'll typically want to cache some static assets</li>
+  </ul>
+  </li>
+</ul>
+
+<Notes>
+  <p>
+  Typically during the install step, you'll want to cache some static assets. If all the files are cached successfully,
+  then the service worker becomes installed. If any of the files fail to download and cache, then the install step will
+  fail and the service worker won't activate (i.e. won't be installed). If that happens, don't worry, it'll try again next time.
+  </p>
+  <p>
+    The first event a service worker gets is install. It's triggered as soon as the worker executes, and it's only called once per service worker.
+    If you alter your service worker script the browser considers it a different service worker, and it'll get its own install event.
+  </p>
+  <p>
+    The install event is your chance to cache everything you need before being able to control clients.
+    The promise you pass to event.waitUntil() lets the browser know when your install completes, and if it was successful.
+  </p>
+</Notes>
+
+---
+### After installation, SW won't be activated immediately if there is already active SW
+<ul>
+  <li>Install</li>
+  <li><RedText>Wait</RedText></li>
+</ul>
+
+<Notes>
+  <p>Refresh is not enough to make new SW go from waiting phase to active, we need to close tab all tabs (existing SW should control zero clients)</p>
+  <p>Without waiting we would break running app in another tab</p>
+  <p>You can take control of uncontrolled clients by calling clients.claim() within your service worker once it's activated. Note: Lot of people
+  including clients.claim() as boilerplate, but you should rarely do so. It only really matters on the very first load,
+  and due to progressive enhancement the page is usually working happily without service worker anyway.</p>
+  <p>For development purposes we can in Chrome Dev Tools enable Update on reload and we can click skipWaiting</p>
+    <p>
+    skipWaiting() means that your new service worker is likely controlling pages that were loaded with an older version.
+    This means some of your page's fetches will have been handled by your old service worker, but your new service worker will be handling subsequent fetches.
+    If this might break things, don't use skipWaiting()
+  </p>
+  <p>
+    If your promise rejects, this signals the install failed, and the browser throws the service worker away.
+  </p>
+</Notes>
+
+---
+### When new SW is activated it is opportunity for handling of old caches
+<ul>
+  <li>Install</li>
+  <li>Wait</li>
+  <li><RedText>Active</RedText></li>
+</ul>
+
+<img src={swLifecycle} alt="Service worker lifecycle." height="550px"/>
+
+<Notes>
+  <p>When installed, the activation step will follow and this is a great opportunity for handling any management of old caches</p>
+  <p>
+    After the activation step, the service worker will control all pages that fall under its scope,
+    though the page that registered the service worker for the first time won't be controlled until it's loaded again.
+    Once a service worker is in control, it will be in one of two states: either the service worker will be terminated to save memory,
+    or it will handle fetch and message events that occur when a network request or message is made from your page.
+  </p>
+  <p>
+    Once your service worker is ready to control clients and handle functional events like push and sync,
+    you'll get an activate event. But that doesn't mean the page that called .register() will be controlled.
+  </p>
+  <p>Closing page termiantes active and waiting SW.</p>
+</Notes>
+
+---
+<CodeSurfer
+  code={require("raw-loader!./snippets/sw.snippet")}
+  title="Basic events"
+  theme={vsDark}
+/>
+
+---
+## Updating SW
+- To update SW we just need to change something in SW file
+- Byte comparation 1️⃣1️⃣1️⃣0️⃣1️⃣0️⃣ !=== 1️⃣1️⃣1️⃣0️⃣1️⃣1️⃣
+
+<Notes>
+  <ul>
+    <li>Update your service worker JavaScript file. When the user navigates to your site, the browser tries to redownload the script file</li>
+      that defined the service worker in the background. If there is even a byte's difference in the service worker file compared to what it currently has, it considers it new.
+    <li>Your new service worker will be started and the install event will be fired.</li>
+  </ul>
+</Notes>
+
+---
+<CodeSurfer
+  code={require("raw-loader!./snippets/basic-caching.snippet")}
+  title="Basic caching"
+  theme={vsDark}
+/>
+<Notes>
+  <p>
+    Here you can see we call caches.open() with our desired cache name, after which we call cache.addAll() and pass in our array of files.
+    This is a chain of promises (caches.open() and cache.addAll()). The event.waitUntil() method takes a promise and uses it to know how long installation takes,
+    and whether it succeeded or not.
+  </p>
+  <p>
+    If all the files are successfully cached, then the service worker will be installed. If any of the files fail to download,
+    then the install step will fail. This allows you to rely on having all the assets that you defined, but does mean you need
+    to be careful with the list of files you decide to cache in the install step. Defining a long list of files will increase the
+    chance that one file may fail to cache, leading to your service worker not getting installed. -> If just one file fails, sw won't be installed
+  </p>
+  <p>This is just one example, you can perform other tasks in the install event or avoid setting an install event listener altogether.</p>
+</Notes>
+
+---
+<CodeSurfer
+  code={require("raw-loader!./snippets/cache-and-return-request.snippet")}
+  title="Returning cached response"
+  theme={vsDark}
+/>
+<Notes>
+  <p>Now that you've installed a service worker, you probably want to return one of your cached responses, right?</p>
+  <p>
+    After a service worker is installed and the user navigates to a different page or refreshes,
+    the service worker will begin to receive fetch events, an example of which is below.
+  </p>
+  <p>Here we've defined our fetch event and within event.respondWith(), we pass in a promise from caches.match(). This method looks at the request and finds any cached results from any of the caches your service worker created.</p>
+  <p>
+    If we have a matching response, we return the cached value, otherwise we return the result of a call to fetch,
+    which will make a network request and return the data if anything can be retrieved from the network.
+    This is a simple example and uses any cached assets we cached during the install step.
+  </p>
+</Notes>
+
+---
+## There are few caching strategies we can use
+
+<ul>
+  <li>Network-first</li>
+  <li>Cache-first/Offline-first</li>
+  <li>Stale-while-revalidate</li>
+</ul>
+
+<Notes>
+As opposed to precaching (which always tries to serve a set of predefined files from a cache),
+runtime caching can combine network and cache access in multiple ways. Each combination is generally
+referred to as a caching strategy. Key caching strategies include:
+- Network-first
+- Cache-first
+- Stale-while-revalidate
+</Notes>
+
+---
+## Network-first
+<img src={swNetworkFirst} alt="Network first cache strategy."/>
+
+<Notes>
+  <p>In this approach, your service worker first attempts to retrieve a response from the network.</p>
+  <p>
+    If the network request succeeds, great! The response is returned to your web app, and a copy of
+    the response is stored using the Cache Storage API—either creating a new entry, or updating a previous entry for the same URL.
+  </p>
+  <p>
+    If the network request fails entirely, or takes too long to return a response,
+    then the most recent response from the cache is returned instead.
+  </p>
+</Notes>
+---
+## Cache-first
+<img src={swCacheFirst} alt="Cache first cache strategy"/>
+
+<Notes>
+  <p>
+    A cache-first strategy is effectively the opposite of network-first. In this approach, when your service worker intercepts a request,
+    it first uses the Cache Storage API to see whether there's a cached response available. If there is, that response is returned to the web app.
+  </p>  
+  <p>If there's a cache miss, though, then the service worker will go to the network and attempt to retrieve a response there.</p>
+  <p>
+    Assuming that network request is successful, it's returned to your web app and a copy is saved in a cache. This cached copy
+    will be used to bypass the network the next time a request for the same URLs is made.
+  </p>
+  <p>Cache-first is usually used for versioned URLs</p>
+</Notes>
+
+---
+## Stale while revalidate
+
+<img src={swStaleWhileRevalidate} alt="Stale while revalidate cache strategy." />
+
+<Notes>
+  <p>
+    Stale-while-revalidate is something of a hybrid. When using it, your service worker will immediately check for a cached response and,
+    if one is found, pass it back to your web app.
+  </p>
+  <p>
+    In the meantime, regardless of whether there was a cache match, your service worker also fires off a network request to get back a "fresh" response.
+    This response is used to update any previously cached response.
+    If the initial cache check was a miss, a copy of the network response is also passed back to your web app.
+  </p>
+  <p>
+    Which of your assets should be cached, with which strategies?
+    Runtime caching can be viewed as a complement to precaching. If all of your assets are already being precached,
+    then you're done—there's nothing that needs to be cached at runtime. Chances are, for any relatively complex web app,
+    you're not going to be precaching everything though.
+  </p>
+  <p>
+    Larger media files, assets that are served from a third-party host like a CDN, or API responses,
+    are just a few examples of the types of assets that can't be effectively precached. Use the Network panel in DevTools
+    to identify requests that fall into this category, and for each of them, think about what tradeoff of freshness vs. reliability is appropriate.
+  </p>
+  <p>
+    Use stale-while-revalidate to prioritize reliability over freshness
+    Since a stale-while-revalidate strategy returns a cached response almost immediately—after the cache has been populated via the first
+    request—you'll end up seeing reliably fast performance when using this strategy. This comes with the tradeoff of getting back response data
+    that could be stale in comparison to what would have been retrieved from the network. Using this strategy works best for assets like user profile
+    images or the initial API responses used to populate a view, when you know that showing something immediately is key, even if it's an older value.
+  </p>
+  <p>
+    Use network-first to prioritize freshness over reliability
+    In some sense, using a network-first strategy is admitting defeat in your battle against the network—it's given priority,
+    but that brings with it uncertainty about reliability. For certain types of assets, seeing a fresh response is preferable to getting back stale information. You might prefer freshness when making an API request for the text of an article that is updated frequently, for instance.
+  </p>
+  <p>
+    By using a network-first strategy inside of a service worker, instead of just going against the network directly,
+    you have the benefit of being able to fall back to something, even if it's a potentially stale response. You won't be reliably fast,
+    but at least you'll be resilient while offline.
+  </p>
+  <p>
+    Use cache-first for versioned URLs
+    In a cache-first strategy, once an entry is cached, it's never updated. For that reason,
+    make sure that you only use it with assets that you know are unlikely to change. In particular,
+    it works best for URLs that contain versioning information—the same sort of URLs that should also be
+    served with a Cache-Control: max-age=31536000 response header.
+  </p>
+</Notes>
+
+---
+## Helpful tools
+<ul>
+ <li><a href="https://developers.google.com/web/tools/workbox/" alt="workbox">Workbox</a></li>
+ <li><a href="https://serviceworke.rs/" alt="service worker cookbook">SW cookbook by Mozilla</a></li>
+ <li><a href="https://www.pwabuilder.com/serviceworker" alt="PWA builder site">PWA builder by Microsoft</a></li>
+ <li><a href="https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app" alt="React website about PWA">PWA in CRA</a></li>
+ <li><a href="https://developers.google.com/web/progressive-web-apps/checklist" alt="PWA checklist">PWA checklist by Google</a> + Lighthouse</li>
+</ul>
+
+---
+## Workbox - set of best practices + removing the boilerplate
+
+<ul>
+  <li>Precaching</li>
+  <li>Runtime caching</li>
+  <li>Strategies</li>
+  <li>Request routing</li>
+  <li>Background sync</li>
+  <li>Helpful debugging</li>
+  <li>Greater flexibility and feature set than sw-precache and sw-toolbox</li>
+</ul>
+
+<div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+  <img src={workBoxApiExample} alt="Workbox api example." />
+  <img src={workBoxApiExample2} alt="Workbox api example 2." />
+</div>
+
+<Notes>
+  - Precaching of assets can be done with CLI, node_modules, webpack
+  - You can even use Offline Google Analytics
+</Notes>
+
+---
+## PWA builder by Microsoft
+#### Web interface or CLI to create PWA in 3 steps
+
+<img src={pwaBuilder} alt="PWA builder website." height="900px" />
+
+<Notes>
+  <div>1. Creating manifest</div>
+  <div>2. Creating SW</div>
+  <div>3. Help in publishing to store</div>
+</Notes>
+
+---
+## PWA in CRA
+#### SW and manifest.json are included
+
+<ul>
+  <li><RedText>All static site assets are cached</RedText> so that your page loads fast on subsequent visits (cache-first strategy)</li>
+  <li>It will work in <RedText>offline mode</RedText></li>
+  <li>Apps can be added to directly to <RedText>home screen</RedText> (eliminates need for app store, at least they claim)</li>
+  <li>In CRA2 SW are <RedText>opt-in,</RedText> serviceWorker.unregister() => serviceWorker.register()</li>
+  <li><RedText>Manifest is included</RedText> and will be used regardless if SW is enabled</li>
+</ul>
+
+<Notes>
+  <div>The service worker will use a cache-first strategy for handling all requests for local assets,
+    including navigation requests for your HTML</div>
+  <div>Opt-in because it makes debugging deployments more challenging</div>
+  <div>SW is only enabled in production env (to test it use `npm run build' to build app in production mode)</div>
+  <div>Built with workbox-webpack-plugin</div>
+</Notes>
+
+---
+## PWA checklist (Lighthouse)
+<ul>
+  <li><b>Baseline</b>
+    <ul>
+      <li>Site is served over <RedText>HTTPS</RedText></li>
+      <li>Pages are <RedText>responsive</RedText> on tablets & mobile devices</li>
+      <li>All app URLs load while <RedText>offline</RedText></li>
+      <li>Metadata provided for <RedText>Add to Home screen</RedText></li>
+      <li><RedText>First load fast</RedText> even on 3G</li>
+      <li>Site <RedText>works cross-browser</RedText></li>
+      <li><RedText>Fast page transitions</RedText> that don't feel like they block on the network</li>
+      <li><RedText>Each page has a URL</RedText></li>
+    </ul>
+  </li>
+  <li><b>Many more as exemplary divided by:</b>
+    <ul>
+      <li>Indexability & social</li>
+      <li>User experience</li>
+      <li>Performance</li>
+      <li>Caching</li>
+      <li>Push notifications</li>
+      <li>Additional features</li>
+    </ul>
+  </li>
+</ul>
+
+---
+## Resources
+<ul>
+ <li>https://web.dev/reliable/service-workers-cache-storage</li>
+ <li>https://developers.google.com/web/fundamentals/primers/service-workers</li>
+ <li>https://serviceworkies.mastery.games</li>
+ <li>https://developer.mozilla.org/en-US/docs/Web/API/Service_Worker_API</li>
+ <li>https://eu.udacity.com/course/intro-to-progressive-web-apps--ud811</li>
+ <li>Various blog posts</li>
+</ul>
+
+---
+# 👋
